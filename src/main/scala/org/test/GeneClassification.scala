@@ -5,12 +5,20 @@ import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable.ArrayBuffer
 
-
+/**
+ *
+ */
 class GeneClassification {
 
   val spark: SparkSession = SparkSession.builder().getOrCreate()
   import spark.implicits._
 
+  /**
+   *
+   * @param sc
+   * @param path
+   * @param seed
+   */
   def main(sc: SparkContext, path: String, seed: Long = 202102): Unit = {
 
     val clf = new HierarchicalClassification()
@@ -26,7 +34,7 @@ class GeneClassification {
 
     val df = sc.parallelize(data).toDF("Root","Terms","Genes","auROC","auPR", "tn", "fp", "fn", "tp", "Time")
     // df.write.format("com.databricks.spark.csv").option("header", "true").save("output.csv")
-    df.write.format("parquet").option("header", "true").save("output.parquet")
+    df.write.format("csv").option("header", "true").save("output.csv")
     df.show()
   }
 }

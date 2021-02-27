@@ -12,12 +12,19 @@ import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.rdd.RDD
 
-
+/**
+ *
+ */
 class HierarchicalClassification {
 
   val spark: SparkSession = SparkSession.builder().getOrCreate()
   import spark.implicits._
 
+  /**
+   *
+   * @param filename
+   * @return
+   */
   def readListFile(filename: String): ArrayBuffer[String] = {
     var list = ArrayBuffer.empty[String]
     val sourceFile = Source.fromFile(filename)
@@ -28,7 +35,11 @@ class HierarchicalClassification {
     list
   }
 
-
+  /**
+   *
+   * @param df
+   * @return
+   */
   def addIndexToDF(df: DataFrame): DataFrame = {
     val newSchema = StructType(df.schema.fields ++ Array(StructField("_index", LongType, nullable=false)))
     val rddWithId = df.rdd.zipWithIndex // Zip on RDD level
@@ -36,21 +47,32 @@ class HierarchicalClassification {
     spark.createDataFrame(rddWithId.map{ case (row, index) => Row.fromSeq(row.toSeq ++ Array(index))}, newSchema) // Convert back to DataFrame
   }
 
-
+  /**
+   *
+   * @param df
+   */
   def countNullsDF(df: DataFrame): Unit = {
     df.select(df.columns.map(colName => {
       count(when(col(colName).isNull, true)) as s"$colName"
     }): _*).show() // or save result somewhere
   }
 
-
+  /**
+   *
+   * @param df
+   * @return
+   */
   def castToDoubleDF(df: DataFrame): DataFrame = {
     df.columns.foldLeft(df)((acc, colName) => {
       acc.withColumn(colName, col(colName).cast(DoubleType))
     })
   }
 
-
+  /**
+   *
+   * @param df
+   * @return
+   */
   def setNullableStateOfColumns(df: DataFrame) : DataFrame = {
     val schema = df.schema
     val newSchema = StructType(schema.map {
@@ -59,17 +81,37 @@ class HierarchicalClassification {
     spark.createDataFrame(df.rdd, newSchema)
   }
 
-
+  /**
+   *
+   * @param df1
+   * @param df2
+   * @return
+   */
   def mergeDF(df1: DataFrame, df2: DataFrame): DataFrame = {
     val _df1 = this.addIndexToDF(df1)
     val _df2 = this.addIndexToDF(df2)
     _df1.join(_df2, _df1("_index") === _df2("_index"), "inner").drop("_index")
   }
 
+  /**
+   *
+   * @param sc
+   * @param s1
+   * @param s2
+   * @return
+   */
   def seqToRDD(sc: SparkContext, s1: Seq[Double], s2: Seq[Double]): RDD[(Double, Double)] = {
     sc.makeRDD((s1 zip s2).map{x => (x._1.toDouble, x._2.toDouble)}.toList)
   }
 
+  /**
+   *
+   * @param sc
+   * @param pred
+   * @param prob
+   * @param label
+   * @return
+   */
   def evaluatePrediction(sc: SparkContext, pred: Seq[Double], prob: Seq[Double], label: Seq[Double]):
   (Double, Double, Double, Double, Double, Double) = {
     var predictionsAndLabels = this.seqToRDD(sc, pred, label)
@@ -94,7 +136,14 @@ class HierarchicalClassification {
     (auROC, auPRC, tn, tp, fp, fn)
   }
 
-
+  /**
+   *
+   * @param sc
+   * @param root
+   * @param hierarchyPath
+   * @param seed
+   * @return
+   */
   def hierarchy(sc: SparkContext, root: String, hierarchyPath: String, seed : Long = 202102):
   (String, Long, Long, Double, Double, Double, Double, Double, Double, Double) = {
 

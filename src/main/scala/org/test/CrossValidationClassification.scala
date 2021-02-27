@@ -18,12 +18,19 @@ import com.sgcharts.sparkutil.Smote
 
 import scala.collection.mutable // Scala 2.11
 
-
+/**
+ *
+ */
 class CrossValidationClassification {
 
   val spark: SparkSession = SparkSession.builder().getOrCreate()
   import spark.implicits._
 
+  /**
+   *
+   * @param prediction
+   * @param label
+   */
   def evaluatePrediction(prediction: DataFrame, label: String): Unit = {
     var predictionsAndLabels = prediction.select("prediction", label)
       .map(row => (row.getDouble(0), row.getDouble(1))).rdd
@@ -40,7 +47,14 @@ class CrossValidationClassification {
     println(s"Area under precision-recall curve = $auPRC")
   }
 
-
+  /**
+   *
+   * @param df
+   * @param features
+   * @param label
+   * @param seed
+   * @return
+   */
   def oversamplingMinorityClass(df: DataFrame, features: mutable.Buffer[String], label: String, seed: Long): DataFrame = {
     val threshold = 0.3
 
@@ -78,6 +92,15 @@ class CrossValidationClassification {
     }
   }
 
+  /**
+   *
+   * @param df
+   * @param features
+   * @param label
+   * @param root
+   * @param seed
+   * @return
+   */
   def predictCV(df: DataFrame, features: mutable.Buffer[String], label: String, root: String, seed: Long = 2021): DataFrame = {
 
     val positiveCount = df.select(col(label)).rdd.map(_ (0).asInstanceOf[Double]).reduce(_ + _)
@@ -111,6 +134,14 @@ class CrossValidationClassification {
     }
   }
 
+  /**
+   * @param training_imb
+   * @param test
+   * @param features
+   * @param label
+   * @param seed
+   * @return
+   */
   def train(training_imb: DataFrame, test: DataFrame, features: mutable.Buffer[String], label: String, seed: Long = 2021): DataFrame = {
 
     val training = this.oversamplingMinorityClass(training_imb, features, label, seed)
@@ -159,7 +190,7 @@ class CrossValidationClassification {
       .setEvaluator(evaluator)
       .setEstimatorParamMaps(paramGrid)
       .setNumFolds(3)
-      .setParallelism(8)
+      //.setParallelism(8)
 
     val cvModel = cv.fit(training)
     val bestModel = cvModel.bestModel.asInstanceOf[PipelineModel].stages(1).asInstanceOf[XGBoostClassificationModel]
