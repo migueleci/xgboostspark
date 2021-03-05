@@ -20,9 +20,16 @@ object App {
 
     val sc = spark.sparkContext
 
-    val path = "/home/miguel/projects/omics/spark/Data"
-    val clf = new GeneClassification()
-    clf.main(sc, path, 2021)
+    if (args.length == 0){
+      println("You need to specify de data path to run the model.")
+    } else {
+      val path = args.apply(0) // "/home/miguel/projects/omics/spark/Data"
+      var seed: Long = 2021
+      if (args.length > 1) seed = args.apply(1).toLong
+      val clf = new GeneClassification()
+      clf.main(sc, path, seed)
+    }
+
   }
 
 }
