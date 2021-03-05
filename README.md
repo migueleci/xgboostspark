@@ -9,6 +9,22 @@ are ancestral relations or dependencies between the classes.
 The workflow of the project includes k-folding, oversampling with 
 SMOTE and cross validation. 
 
+## Compilation and generation of .jar
+
+First, the project need to be compiled 
+
+      mvn clean compile
+
+Then the .jar is generated with 
+      
+      mvn install
+
+## Running the project
+
+You need to specify the path od the data as a parameter on the spark-submit command
+
+      spark-submit sparktest-1.0-SNAPSHOT.jar /path/to/data
+
 ## Requirements
 
  - OpenJDK 8 (1.8.0_282)
